@@ -79,7 +79,7 @@ for human_detail in human_details:
     human_details_index[human_detail["uid"]] = human_detail
 
 def write_message(who, to_write):
-    out.write(u'[{date}] {full_name}:\n {message} \n\n\n'.format(**{
+    out.write(u'[{date}] {full_name}:\n {message}\n'.format(**{
             'date': datetime.datetime.fromtimestamp(
                 int(to_write["date"])).strftime('%Y-%m-%d %H:%M:%S'),
 
@@ -89,6 +89,45 @@ def write_message(who, to_write):
             'message': to_write["body"].replace('<br>', '\n')
         }
     ))
+    def write_attachments(prefix, attachments):
+        def detect_largest_photo(obj):
+            def get_photo_keys():
+                for k, v in obj.iteritems():
+                    if k.startswith("photo_"):
+                        yield k[len("photo_"):]
+            return "photo_%s" % max(map(lambda k: int(k), get_photo_keys()))
+        for (i, attachment) in attachments:
+             if attachment["type"] == "audio":
+                 audio = attachment["audio"]
+                 out.write("%sAudio: %s - %s\n" % (prefix, audio["artist"], audio["title"]))
+             elif attachment["type"] == "doc":
+                 doc = attachment["doc"]
+                 if "thumb" in doc:
+                     out.write("%sDoc: %s %s %s\n" % (prefix, doc["title"], doc["url"], doc["thumb"]))
+                 else:
+                     out.write("%sDoc: %s %s\n" % (prefix, doc["title"], doc["url"]))
+             elif attachment["type"] == "photo":
+                 photo = attachment["photo"]
+                 out.write("%sPhoto: %s %s\n" % (prefix, photo["src_big"], photo["text"]))
+             elif attachment["type"] == "poll":
+                 poll = attachment["poll"]
+                 out.write("%sPoll: %s" % (prefix, poll["question"]))
+             elif attachment["type"] == "sticker":
+                 sticker = attachment["sticker"]
+                 out.write("%sSticker: %s\n" % (prefix, sticker[detect_largest_photo(sticker)]))
+             elif attachment["type"] == "video":
+                 video = attachment["video"]
+                 out.write("%sVideo: %s\n" % (prefix, video["title"]))
+             elif attachment["type"] == "wall":
+                 wall = attachment["wall"]
+                 out.write("%sWall: %s\n" % (prefix, wall["text"]))
+                 if "attachments" in wall:
+                     write_attachments(prefix + ">", enumerate(wall["attachments"]))
+             else:
+                 raise Exception("unknown attachment type " + attachment["type"])
+    if "attachments" in to_write:
+        write_attachments("+", enumerate(to_write["attachments"]))
+    out.write("\n\n")
 
 
 mess = 0
