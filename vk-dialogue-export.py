@@ -40,19 +40,13 @@ if len(Config.read("config.ini")) != 1:
 username = AuthConfig.get("auth", "username")
 password = AuthConfig.get("auth", "password")
 
-messages_id = Config.get("messages", "chat_id")
-messages_type = Config.get("messages", "chat_type")
+chat_id = Config.get("messages", "chat_id")
 
 app_id = Config.get("application", "app_id")
 
-# some chat preparation
-
-if messages_type == "interlocutor":
-    is_chat = False
-elif messages_type == "chat":
-    is_chat = True
-else:
-    sys.exit("Messages type must be either interlocutor or chat.")
+is_chat = chat_id.startswith("c")
+if is_chat:
+    chat_id = chat_id[1:]
 
 
 # auth to get token
@@ -67,10 +61,10 @@ sys.stdout.write('Authorized vk\n')
 # get some information about chat
 
 selector = "chat_id" if is_chat else "uid"
-messages = _api("messages.getHistory", [(selector, messages_id)], token)
+messages = _api("messages.getHistory", [(selector, chat_id)], token)
 
 out = codecs.open(
-    'vk_exported_dialogue_%s%s.txt' % ('ui' if not is_chat else 'c', messages_id),
+    'vk_exported_dialogue_%s%s.txt' % ('ui' if not is_chat else 'c', chat_id),
     "w+", "utf-8"
 )
 
@@ -176,7 +170,7 @@ while mess != cnt:
         try:
             message_part = _api(
                 "messages.getHistory",
-                [(selector, messages_id), ("offset", mess), ("count", max_part), ("rev", 1)],
+                [(selector, chat_id), ("offset", mess), ("count", max_part), ("rev", 1)],
                 token
             )
         except Exception as e:
