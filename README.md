@@ -5,7 +5,13 @@ A tool to export dialogue with specific interlocutor or chat.
 
 ## USAGE
 
-Run the `create-auth-ini.py` script to generate the authentication file template and run.
+Run the `create-auth-ini.py` script to generate the authentication file template and run:
+
+```
+python vk-dialogue-export.py chat_id
+```
+
+where `chat_id` is an interlocutor ID or a chat ID.
 
 ### NOTES
 
