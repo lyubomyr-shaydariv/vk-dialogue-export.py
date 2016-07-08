@@ -5,7 +5,7 @@ A tool to export dialogue with specific interlocutor or chat.
 
 ## USAGE
 
-Run the `create-auth-ini.sh` script to generate the authentication file template and run.
+Run the `create-auth-ini.py` script to generate the authentication file template and run.
 
 ### NOTES
 
