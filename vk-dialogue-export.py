@@ -57,11 +57,11 @@ if is_chat:
 # auth to get token
 
 try:
+    sys.stdout.write("Authenticating as %s...\n" % username)
     token, user_id = vk_auth.auth(username, password, app_id, 'messages')
+    sys.stdout.write("Success!\n");
 except RuntimeError:
-    sys.exit("Incorrect username/password. Please check it.")
-
-sys.stdout.write('Authorized vk\n')
+    sys.exit("Cannot authenticate, please check your credentials in .auth.ini")
 
 # get some information about chat
 
@@ -145,7 +145,7 @@ mess = 0
 max_part = 200  # Due to vk.api
 
 cnt = messages[0]
-sys.stdout.write("Count of messages: %s\n" % cnt)
+sys.stdout.write("Message count: %s\n" % cnt)
 
 while mess != cnt:
     # Try to retrieve info anyway
