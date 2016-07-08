@@ -18,13 +18,20 @@ def _api(method, params, token):
 
 # read config values
 
-Config = ConfigParser.ConfigParser()
-Config.read("config.ini")
+AuthConfig = ConfigParser.ConfigParser()
+if len(AuthConfig.read(".auth.ini")) != 1:
+    sys.exit("Can't read .auth.ini")
 
-login = Config.get("auth", "username")
-password = Config.get("auth", "password")
+Config = ConfigParser.ConfigParser()
+if len(Config.read("config.ini")) != 1:
+    sys.exit("Can't read config.ini")
+
+username = AuthConfig.get("auth", "username")
+password = AuthConfig.get("auth", "password")
+
 messages_id = Config.get("messages", "chat_id")
 messages_type = Config.get("messages", "chat_type")
+
 app_id = Config.get("application", "app_id")
 
 # some chat preparation
@@ -40,9 +47,9 @@ else:
 # auth to get token
 
 try:
-    token, user_id = vk_auth.auth(login, password, app_id, 'messages')
+    token, user_id = vk_auth.auth(username, password, app_id, 'messages')
 except RuntimeError:
-    sys.exit("Incorrect login/password. Please check it.")
+    sys.exit("Incorrect username/password. Please check it.")
 
 sys.stdout.write('Authorized vk\n')
 

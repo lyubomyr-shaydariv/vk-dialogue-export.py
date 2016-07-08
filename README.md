@@ -5,8 +5,7 @@ A tool to export dialogue with specific interlocutor or chat.
 
 ## USAGE
 
-Edit config.ini file and run.
-
+Run the `create-auth-ini.sh` script to generate the authentication file template and run.
 
 ### NOTES
 
