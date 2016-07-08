@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import argparse
 import codecs
 import ConfigParser
 import datetime
@@ -29,6 +30,10 @@ def normalize_message(message):
 
 # read config values
 
+CLParser = argparse.ArgumentParser()
+CLParser.add_argument('chat_id', type=str, help='chat id')
+cmd_args = CLParser.parse_args()
+
 AuthConfig = ConfigParser.ConfigParser()
 if len(AuthConfig.read(".auth.ini")) != 1:
     sys.exit("Can't read .auth.ini")
@@ -37,10 +42,10 @@ Config = ConfigParser.ConfigParser()
 if len(Config.read("config.ini")) != 1:
     sys.exit("Can't read config.ini")
 
+chat_id = cmd_args.chat_id
+
 username = AuthConfig.get("auth", "username")
 password = AuthConfig.get("auth", "password")
-
-chat_id = Config.get("messages", "chat_id")
 
 app_id = Config.get("application", "app_id")
 
