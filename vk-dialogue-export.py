@@ -68,49 +68,28 @@ out = codecs.open(
     "w+", "utf-8"
 )
 
-human_uids = [messages[1]["uid"]]
-
-# Export uids from dialogue.
-# Due to vk.api, start from 1.
-for i in range(1, 100):
-    try:
-        if messages[i]["uid"] != human_uids[0]:
-            human_uids.append(messages[i]["uid"])
-    except IndexError:
-        pass
-
-# Export details from uids
-human_details = _api(
-    "users.get",
-    [("uids", ','.join(str(v) for v in human_uids))],
-    token
-)
-
-human_details_index = {}
-for human_detail in human_details:
-    human_details_index[human_detail["uid"]] = human_detail
-
 def resolve_uid_details(uid):
     return _api("users.get", [("user_ids", uid)], token)[0]
 
 resolve_uid_details = Memoize(resolve_uid_details)
 
 def write_message(who, to_write):
+    user_details = resolve_uid_details(who)
     out.write(u'[{date}] {full_name}:\n {message}\n'.format(**{
             'date': format_timestamp(int(to_write["date"])),
 
             'full_name': '%s %s' % (
-                human_details_index[who]["first_name"], human_details_index[who]["last_name"]),
+                user_details["first_name"], user_details["last_name"]),
 
             'message': normalize_message(to_write["body"])
         }
     ))
     def write_forwarded_messages(prefix, messages):
         for (i, msg) in messages:
-            user_details = resolve_uid_details(msg["uid"])
+            fwd_user_details = resolve_uid_details(msg["uid"])
             out.write("Fwd(%s): %s (%s) %s\n" % (
                 msg["uid"],
-                "%s %s" % (user_details["first_name"], user_details["last_name"]),
+                "%s %s" % (fwd_user_details["first_name"], fwd_user_details["last_name"]),
                 format_timestamp(int(msg["date"])),
                 normalize_message(msg["body"])
             ))
