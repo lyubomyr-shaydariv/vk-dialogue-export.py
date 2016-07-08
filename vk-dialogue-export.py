@@ -15,7 +15,11 @@ import vk_auth
 def _api(method, params, token):
     params.append(("access_token", token))
     url = "https://api.vk.com/method/%s?%s" % (method, urlencode(params))
-    return json.loads(urllib2.urlopen(url).read())["response"]
+    payload = urllib2.urlopen(url).read()
+    payload_json = json.loads(payload)
+    if not "response" in payload_json:
+        sys.exit("Request failed:\nURL     = %s\nPAYLOAD = %s" % (url, payload))
+    return payload_json["response"]
 
 def format_timestamp(timestamp):
     return datetime.datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d %H:%M:%S')
