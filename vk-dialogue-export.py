@@ -16,6 +16,12 @@ def _api(method, params, token):
     url = "https://api.vk.com/method/%s?%s" % (method, urlencode(params))
     return json.loads(urllib2.urlopen(url).read())["response"]
 
+def format_timestamp(timestamp):
+    return datetime.datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d %H:%M:%S')
+
+def normalize_message(message):
+    return message.replace('<br>', '\n')
+
 # read config values
 
 AuthConfig = ConfigParser.ConfigParser()
@@ -87,15 +93,17 @@ for human_detail in human_details:
 
 def write_message(who, to_write):
     out.write(u'[{date}] {full_name}:\n {message}\n'.format(**{
-            'date': datetime.datetime.fromtimestamp(
-                int(to_write["date"])).strftime('%Y-%m-%d %H:%M:%S'),
+            'date': format_timestamp(int(to_write["date"])),
 
             'full_name': '%s %s' % (
                 human_details_index[who]["first_name"], human_details_index[who]["last_name"]),
 
-            'message': to_write["body"].replace('<br>', '\n')
+            'message': normalize_message(to_write["body"])
         }
     ))
+    def write_forwarded_messages(prefix, messages):
+        for (i, msg) in messages:
+            out.write("Fwd: %s (%s) %s\n" % (msg["uid"], format_timestamp(int(msg["date"])), normalize_message(msg["body"])))
     def write_attachments(prefix, attachments):
         def detect_largest_photo(obj):
             def get_photo_keys():
@@ -132,6 +140,8 @@ def write_message(who, to_write):
                      write_attachments(prefix + ">", enumerate(wall["attachments"]))
              else:
                  raise Exception("unknown attachment type " + attachment["type"])
+    if "fwd_messages" in to_write:
+        write_forwarded_messages("<", enumerate(to_write["fwd_messages"]))
     if "attachments" in to_write:
         write_attachments("+", enumerate(to_write["attachments"]))
     out.write("\n\n")
