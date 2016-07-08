@@ -8,6 +8,7 @@ import sys
 import urllib2
 from urllib import urlencode
 
+from memoize import Memoize
 import vk_auth
 
 
@@ -91,6 +92,11 @@ human_details_index = {}
 for human_detail in human_details:
     human_details_index[human_detail["uid"]] = human_detail
 
+def resolve_uid_details(uid):
+    return _api("users.get", [("user_ids", uid)], token)[0]
+
+resolve_uid_details = Memoize(resolve_uid_details)
+
 def write_message(who, to_write):
     out.write(u'[{date}] {full_name}:\n {message}\n'.format(**{
             'date': format_timestamp(int(to_write["date"])),
@@ -103,7 +109,13 @@ def write_message(who, to_write):
     ))
     def write_forwarded_messages(prefix, messages):
         for (i, msg) in messages:
-            out.write("Fwd: %s (%s) %s\n" % (msg["uid"], format_timestamp(int(msg["date"])), normalize_message(msg["body"])))
+            user_details = resolve_uid_details(msg["uid"])
+            out.write("Fwd(%s): %s (%s) %s\n" % (
+                msg["uid"],
+                "%s %s" % (user_details["first_name"], user_details["last_name"]),
+                format_timestamp(int(msg["date"])),
+                normalize_message(msg["body"])
+            ))
     def write_attachments(prefix, attachments):
         def detect_largest_photo(obj):
             def get_photo_keys():
