@@ -87,8 +87,9 @@ messages = _api("messages.getHistory", [(selector, config["export"]["chat_id"])]
 
 # prepare output
 
-if not os.path.exists(config["export"]["output_directory"]):
-    os.makedirs(config["export"]["output_directory"])
+if config["export"]["output_directory"] is not None:
+    if not os.path.exists(config["export"]["output_directory"]):
+        os.makedirs(config["export"]["output_directory"])
 output_filename = 'vk_exported_dialogue_%s%s.txt' % ('ui' if not config["export"]["is_group_chat"] else 'c', config["export"]["chat_id"])
 output_path = build_output_path(config["export"]["output_directory"], output_filename)
 out = codecs.open(output_path, "w+", "utf-8")
