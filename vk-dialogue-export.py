@@ -5,6 +5,7 @@ import codecs
 import ConfigParser
 import datetime
 import json
+import os
 import sys
 import urllib2
 from urllib import urlencode
@@ -33,6 +34,7 @@ def normalize_message_body(body):
 def read_config():
     CLParser = argparse.ArgumentParser()
     CLParser.add_argument('chat_id', type=str, help='chat id')
+    CLParser.add_argument('--save-photos', dest='save_photos', action='store_true', help="save photos")
     cmd_args = CLParser.parse_args()
 
     AuthConfig = ConfigParser.ConfigParser()
@@ -48,7 +50,8 @@ def read_config():
     return {
         "export": {
             "chat_id": cmd_args.chat_id if not is_group_chat else cmd_args.chat_id[1:],
-            "is_group_chat":  is_group_chat
+            "is_group_chat": is_group_chat,
+            "save_photos": cmd_args.save_photos
         },
         "auth": {
             "username": AuthConfig.get("auth", "username"),
@@ -125,6 +128,17 @@ def write_message(who, message):
              elif attachment["type"] == "photo":
                  photo = attachment["photo"]
                  out.write("%sPhoto: %s %s\n" % (prefix, photo["src_big"], photo["text"]))
+                 if config["export"]["save_photos"]:
+                     try:
+                         sys.stdout.write("Downloading %s... " % photo["src_big"])
+                         remote_file = urllib2.urlopen(photo["src_big"])
+                         with open(os.path.basename(photo["src_big"]), "wb") as local_file:
+                             local_file.write(remote_file.read())
+                         sys.stdout.write("OK\n")
+                     except urllib2.HTTPError, ex:
+                         sys.stdout.write("%s\n" % ex.reason)
+                     except urllib2.URLError, ex:
+                         sys.stdout.write("%s\n" % ex.reason)
              elif attachment["type"] == "poll":
                  poll = attachment["poll"]
                  out.write("%sPoll: %s" % (prefix, poll["question"]))
