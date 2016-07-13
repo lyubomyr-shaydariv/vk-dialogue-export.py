@@ -16,14 +16,18 @@ where `chat_id` is an interlocutor ID or a chat ID.
 ### COMMAND LINE ARGUMENTS
 
 ```
-usage: vk-dialogue-export.py [-h] [--save-photos] chat_id
+usage: vk-dialogue-export.py [-h] [--save-photos]
+                             [--output-directory OUTPUT_DIRECTORY]
+                             chat_id
 
 positional arguments:
-  chat_id        chat id
+  chat_id               chat id
 
 optional arguments:
-  -h, --help     show this help message and exit
-  --save-photos  save photos
+  -h, --help            show this help message and exit
+  --save-photos         save photos
+  --output-directory OUTPUT_DIRECTORY
+                        output directory
 ```
 
 ### NOTES

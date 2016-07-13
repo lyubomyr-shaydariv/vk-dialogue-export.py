@@ -29,12 +29,16 @@ def format_timestamp(timestamp):
 def normalize_message_body(body):
     return body.replace('<br>', '\n')
 
+def build_output_path(directory, filename):
+    return filename if directory is None else os.path.join(directory, filename)
+
 # read config values
 
 def read_config():
     CLParser = argparse.ArgumentParser()
     CLParser.add_argument('chat_id', type=str, help='chat id')
     CLParser.add_argument('--save-photos', dest='save_photos', action='store_true', help="save photos")
+    CLParser.add_argument('--output-directory', dest="output_directory", default=None, help="output directory")
     cmd_args = CLParser.parse_args()
 
     AuthConfig = ConfigParser.ConfigParser()
@@ -51,7 +55,8 @@ def read_config():
         "export": {
             "chat_id": cmd_args.chat_id if not is_group_chat else cmd_args.chat_id[1:],
             "is_group_chat": is_group_chat,
-            "save_photos": cmd_args.save_photos
+            "save_photos": cmd_args.save_photos,
+            "output_directory": cmd_args.output_directory
         },
         "auth": {
             "username": AuthConfig.get("auth", "username"),
@@ -78,10 +83,13 @@ except RuntimeError:
 selector = "chat_id" if config["export"]["is_group_chat"] else "uid"
 messages = _api("messages.getHistory", [(selector, config["export"]["chat_id"])], token)
 
-out = codecs.open(
-    'vk_exported_dialogue_%s%s.txt' % ('ui' if not config["export"]["is_group_chat"] else 'c', config["export"]["chat_id"]),
-    "w+", "utf-8"
-)
+# prepare output
+
+if not os.path.exists(config["export"]["output_directory"]):
+    os.makedirs(config["export"]["output_directory"])
+output_filename = 'vk_exported_dialogue_%s%s.txt' % ('ui' if not config["export"]["is_group_chat"] else 'c', config["export"]["chat_id"])
+output_path = build_output_path(config["export"]["output_directory"], output_filename)
+out = codecs.open(output_path, "w+", "utf-8")
 
 def resolve_uid_details(uid):
     return _api("users.get", [("user_ids", uid)], token)[0]
@@ -132,7 +140,7 @@ def write_message(who, message):
                      try:
                          sys.stdout.write("Downloading %s... " % photo["src_big"])
                          remote_file = urllib2.urlopen(photo["src_big"])
-                         with open(os.path.basename(photo["src_big"]), "wb") as local_file:
+                         with open(build_output_path(config["export"]["output_directory"], os.path.basename(photo["src_big"])), "wb") as local_file:
                              local_file.write(remote_file.read())
                          sys.stdout.write("OK\n")
                      except urllib2.HTTPError, ex:
