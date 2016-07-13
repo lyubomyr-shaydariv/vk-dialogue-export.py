@@ -30,46 +30,53 @@ def normalize_message(message):
 
 # read config values
 
-CLParser = argparse.ArgumentParser()
-CLParser.add_argument('chat_id', type=str, help='chat id')
-cmd_args = CLParser.parse_args()
+def read_config():
+    CLParser = argparse.ArgumentParser()
+    CLParser.add_argument('chat_id', type=str, help='chat id')
+    cmd_args = CLParser.parse_args()
 
-AuthConfig = ConfigParser.ConfigParser()
-if len(AuthConfig.read(".auth.ini")) != 1:
-    sys.exit("Can't read .auth.ini")
+    AuthConfig = ConfigParser.ConfigParser()
+    if len(AuthConfig.read(".auth.ini")) != 1:
+        sys.exit("Can't read .auth.ini")
 
-Config = ConfigParser.ConfigParser()
-if len(Config.read("config.ini")) != 1:
-    sys.exit("Can't read config.ini")
+    Config = ConfigParser.ConfigParser()
+    if len(Config.read("config.ini")) != 1:
+        sys.exit("Can't read config.ini")
 
-chat_id = cmd_args.chat_id
+    is_chat = cmd_args.chat_id.startswith("c")
 
-username = AuthConfig.get("auth", "username")
-password = AuthConfig.get("auth", "password")
+    return {
+        "export": {
+            "chat_id": cmd_args.chat_id if not is_chat else cmd_args.chat_id[1:],
+            "is_chat":  is_chat
+        },
+        "auth": {
+            "username": AuthConfig.get("auth", "username"),
+            "password": AuthConfig.get("auth", "password"),
+        },
+        "app": {
+            "id": Config.get("application", "app_id")
+        }
+    }
 
-app_id = Config.get("application", "app_id")
-
-is_chat = chat_id.startswith("c")
-if is_chat:
-    chat_id = chat_id[1:]
-
+config = read_config()
 
 # auth to get token
 
 try:
-    sys.stdout.write("Authenticating as %s...\n" % username)
-    token, user_id = vk_auth.auth(username, password, app_id, 'messages')
+    sys.stdout.write("Authenticating as %s...\n" % config["auth"]["username"])
+    token, user_id = vk_auth.auth(config["auth"]["username"], config["auth"]["password"], config["app"]["id"], 'messages')
     sys.stdout.write("Success!\n")
 except RuntimeError:
     sys.exit("Cannot authenticate, please check your credentials in .auth.ini")
 
 # get some information about chat
 
-selector = "chat_id" if is_chat else "uid"
-messages = _api("messages.getHistory", [(selector, chat_id)], token)
+selector = "chat_id" if config["export"]["is_chat"] else "uid"
+messages = _api("messages.getHistory", [(selector, config["export"]["chat_id"])], token)
 
 out = codecs.open(
-    'vk_exported_dialogue_%s%s.txt' % ('ui' if not is_chat else 'c', chat_id),
+    'vk_exported_dialogue_%s%s.txt' % ('ui' if not config["export"]["is_chat"] else 'c', config["export"]["chat_id"]),
     "w+", "utf-8"
 )
 
@@ -161,7 +168,7 @@ while mess != cnt:
         try:
             message_part = _api(
                 "messages.getHistory",
-                [(selector, chat_id), ("offset", mess), ("count", max_part), ("rev", 1)],
+                [(selector, config["export"]["chat_id"]), ("offset", mess), ("count", max_part), ("rev", 1)],
                 token
             )
         except Exception as e:
