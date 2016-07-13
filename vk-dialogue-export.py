@@ -59,7 +59,7 @@ if is_chat:
 try:
     sys.stdout.write("Authenticating as %s...\n" % username)
     token, user_id = vk_auth.auth(username, password, app_id, 'messages')
-    sys.stdout.write("Success!\n");
+    sys.stdout.write("Success!\n")
 except RuntimeError:
     sys.exit("Cannot authenticate, please check your credentials in .auth.ini")
 
@@ -134,10 +134,17 @@ def write_message(who, to_write):
                      write_attachments(prefix + ">", enumerate(wall["attachments"]))
              else:
                  raise Exception("unknown attachment type " + attachment["type"])
+    def write_geo(geo):
+        if geo["type"] == "point":
+            out.write("Geo: %s (%s)\n" % (geo["place"]["title"], geo["coordinates"]))
+        else:
+            raise Exception("unknown geo type " + geo["type"])
     if "fwd_messages" in to_write:
         write_forwarded_messages("<", enumerate(to_write["fwd_messages"]))
     if "attachments" in to_write:
         write_attachments("+", enumerate(to_write["attachments"]))
+    if "geo" in to_write:
+        write_geo(to_write["geo"])
     out.write("\n\n")
 
 
