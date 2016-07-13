@@ -18,6 +18,7 @@ where `chat_id` is an interlocutor ID or a chat ID.
 ```
 usage: vk-dialogue-export.py [-h] [--save-photos]
                              [--output-directory OUTPUT_DIRECTORY]
+                             [--auto-output-directory]
                              chat_id
 
 positional arguments:
@@ -28,6 +29,8 @@ optional arguments:
   --save-photos         save photos
   --output-directory OUTPUT_DIRECTORY
                         output directory
+  --auto-output-directory
+                        generate output directory automatically
 ```
 
 ### NOTES
