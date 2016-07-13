@@ -25,8 +25,8 @@ def _api(method, params, token):
 def format_timestamp(timestamp):
     return datetime.datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d %H:%M:%S')
 
-def normalize_message(message):
-    return message.replace('<br>', '\n')
+def normalize_message_body(body):
+    return body.replace('<br>', '\n')
 
 # read config values
 
@@ -43,12 +43,12 @@ def read_config():
     if len(Config.read("config.ini")) != 1:
         sys.exit("Can't read config.ini")
 
-    is_chat = cmd_args.chat_id.startswith("c")
+    is_group_chat = cmd_args.chat_id.startswith("c")
 
     return {
         "export": {
-            "chat_id": cmd_args.chat_id if not is_chat else cmd_args.chat_id[1:],
-            "is_chat":  is_chat
+            "chat_id": cmd_args.chat_id if not is_group_chat else cmd_args.chat_id[1:],
+            "is_group_chat":  is_group_chat
         },
         "auth": {
             "username": AuthConfig.get("auth", "username"),
@@ -72,11 +72,11 @@ except RuntimeError:
 
 # get some information about chat
 
-selector = "chat_id" if config["export"]["is_chat"] else "uid"
+selector = "chat_id" if config["export"]["is_group_chat"] else "uid"
 messages = _api("messages.getHistory", [(selector, config["export"]["chat_id"])], token)
 
 out = codecs.open(
-    'vk_exported_dialogue_%s%s.txt' % ('ui' if not config["export"]["is_chat"] else 'c', config["export"]["chat_id"]),
+    'vk_exported_dialogue_%s%s.txt' % ('ui' if not config["export"]["is_group_chat"] else 'c', config["export"]["chat_id"]),
     "w+", "utf-8"
 )
 
@@ -85,15 +85,15 @@ def resolve_uid_details(uid):
 
 resolve_uid_details = Memoize(resolve_uid_details)
 
-def write_message(who, to_write):
+def write_message(who, message):
     user_details = resolve_uid_details(who)
     out.write(u'[{date}] {full_name}:\n {message}\n'.format(**{
-            'date': format_timestamp(int(to_write["date"])),
+            'date': format_timestamp(int(message["date"])),
 
             'full_name': '%s %s' % (
                 user_details["first_name"], user_details["last_name"]),
 
-            'message': normalize_message(to_write["body"])
+            'message': normalize_message_body(message["body"])
         }
     ))
     def write_forwarded_messages(prefix, messages):
@@ -103,7 +103,7 @@ def write_message(who, to_write):
                 msg["uid"],
                 "%s %s" % (fwd_user_details["first_name"], fwd_user_details["last_name"]),
                 format_timestamp(int(msg["date"])),
-                normalize_message(msg["body"])
+                normalize_message_body(msg["body"])
             ))
     def write_attachments(prefix, attachments):
         def detect_largest_photo(obj):
@@ -146,12 +146,12 @@ def write_message(who, to_write):
             out.write("Geo: %s (%s)\n" % (geo["place"]["title"], geo["coordinates"]))
         else:
             raise Exception("unknown geo type " + geo["type"])
-    if "fwd_messages" in to_write:
-        write_forwarded_messages("<", enumerate(to_write["fwd_messages"]))
-    if "attachments" in to_write:
-        write_attachments("+", enumerate(to_write["attachments"]))
-    if "geo" in to_write:
-        write_geo(to_write["geo"])
+    if "fwd_messages" in message:
+        write_forwarded_messages("<", enumerate(message["fwd_messages"]))
+    if "attachments" in message:
+        write_attachments("+", enumerate(message["attachments"]))
+    if "geo" in message:
+        write_geo(message["geo"])
     out.write("\n\n")
 
 
