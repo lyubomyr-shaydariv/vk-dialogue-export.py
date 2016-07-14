@@ -74,10 +74,11 @@ config = read_config()
 # auth to get token
 
 try:
-    sys.stdout.write("Authenticating as %s...\n" % config["auth"]["username"])
+    sys.stdout.write("Authenticating as %s... " % config["auth"]["username"])
     token, user_id = vk_auth.auth(config["auth"]["username"], config["auth"]["password"], config["app"]["id"], 'messages')
-    sys.stdout.write("Success!\n")
+    sys.stdout.write("OK\n")
 except RuntimeError:
+    sys.stdout.write("FAILED\n")
     sys.exit("Cannot authenticate, please check your credentials in .auth.ini")
 
 # get some information about chat
