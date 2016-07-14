@@ -147,9 +147,11 @@ def write_message(who, message):
                              local_file.write(remote_file.read())
                          sys.stdout.write("OK\n")
                      except urllib2.HTTPError, ex:
-                         sys.stdout.write("%s\n" % ex.reason)
+                         sys.stdout.write("FAILED\n")
+                         sys.stderr.write("%s\n" % ex.reason)
                      except urllib2.URLError, ex:
-                         sys.stdout.write("%s\n" % ex.reason)
+                         sys.stdout.write("FAILED\n")
+                         sys.stderr.write("%s\n" % ex.reason)
              elif attachment["type"] == "poll":
                  poll = attachment["poll"]
                  out.write("%sPoll: %s" % (prefix, poll["question"]))
