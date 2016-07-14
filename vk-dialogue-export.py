@@ -11,7 +11,11 @@ import urllib2
 from urllib import urlencode
 
 from memoize import Memoize
+from reporter import Reporter
 import vk_auth
+
+
+reporter = Reporter.std_reporter()
 
 
 def _api(method, params, token):
@@ -74,11 +78,11 @@ config = read_config()
 # auth to get token
 
 try:
-    sys.stdout.write("Authenticating as %s... " % config["auth"]["username"])
+    reporter.progress("Authenticating as %s" % config["auth"]["username"], pad=True)
     token, user_id = vk_auth.auth(config["auth"]["username"], config["auth"]["password"], config["app"]["id"], 'messages')
-    sys.stdout.write("OK\n")
+    reporter.line("OK")
 except RuntimeError:
-    sys.stdout.write("FAILED\n")
+    reporter.line("FAILED")
     sys.exit("Cannot authenticate, please check your credentials in .auth.ini")
 
 # get some information about chat
@@ -142,17 +146,17 @@ def write_message(who, message):
                  out.write("%sPhoto: %s %s\n" % (prefix, photo["src_big"], photo["text"]))
                  if config["export"]["save_photos"]:
                      try:
-                         sys.stdout.write("Downloading %s... " % photo["src_big"])
+                         reporter.progress("Downloading %s" % photo["src_big"], pad=True)
                          remote_file = urllib2.urlopen(photo["src_big"])
                          with open(build_output_path(config["export"]["output_directory"], os.path.basename(photo["src_big"])), "wb") as local_file:
                              local_file.write(remote_file.read())
-                         sys.stdout.write("OK\n")
+                         reporter.line("OK")
                      except urllib2.HTTPError, ex:
-                         sys.stdout.write("FAILED\n")
-                         sys.stderr.write("%s\n" % ex.reason)
+                         reporter.line("FAILED")
+                         reporter.error_line(ex.reason)
                      except urllib2.URLError, ex:
-                         sys.stdout.write("FAILED\n")
-                         sys.stderr.write("%s\n" % ex.reason)
+                         reporter.line("FAILED")
+                         reporter.error_line(ex.reason)
              elif attachment["type"] == "poll":
                  poll = attachment["poll"]
                  out.write("%sPoll: %s" % (prefix, poll["question"]))
@@ -187,7 +191,7 @@ mess = 0
 max_part = 200  # Due to vk.api
 
 cnt = messages[0]
-sys.stdout.write("Message count: %s\n" % cnt)
+reporter.line("Message count: %s" % cnt)
 
 while mess != cnt:
     # Try to retrieve info anyway
@@ -200,7 +204,7 @@ while mess != cnt:
                 token
             )
         except Exception as e:
-            sys.stderr.write('Got error %s, continue...\n' % e)
+            reporter.error_line('Got error %s, continue...' % e)
             continue
         break
 
@@ -214,7 +218,7 @@ while mess != cnt:
     if result > cnt:
         result = (mess - cnt) + mess
     mess = result
-    sys.stdout.write("Exported %s messages of %s\n" % (mess, cnt))
+    reporter.line("Exported %s messages of %s" % (mess, cnt))
 
 out.close()
-sys.stdout.write('Export done!\n')
+reporter.line('Export done!')
