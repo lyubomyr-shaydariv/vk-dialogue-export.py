@@ -10,12 +10,10 @@ import sys
 import urllib2
 from urllib import urlencode
 
+from downloader import Downloader
 from memoize import Memoize
 from reporter import Reporter
 import vk_auth
-
-
-reporter = Reporter.std_reporter()
 
 
 def _api(method, params, token):
@@ -32,9 +30,6 @@ def format_timestamp(timestamp):
 
 def normalize_message_body(body):
     return body.replace('<br>', '\n')
-
-def build_output_path(directory, filename):
-    return filename if directory is None else os.path.join(directory, filename)
 
 # read config values
 
@@ -75,6 +70,9 @@ def read_config():
 
 config = read_config()
 
+reporter = Reporter.std_reporter()
+downloader = Downloader(reporter, directory=config["export"]["output_directory"])
+
 # auth to get token
 
 try:
@@ -96,7 +94,7 @@ if config["export"]["output_directory"] is not None:
     if not os.path.exists(config["export"]["output_directory"]):
         os.makedirs(config["export"]["output_directory"])
 output_filename = 'vk_exported_dialogue_%s%s.txt' % ('ui' if not config["export"]["is_group_chat"] else 'c', config["export"]["chat_id"])
-output_path = build_output_path(config["export"]["output_directory"], output_filename)
+output_path = Downloader.resolve_path(config["export"]["output_directory"], output_filename)
 out = codecs.open(output_path, "w+", "utf-8")
 
 def resolve_uid_details(uid):
@@ -145,18 +143,7 @@ def write_message(who, message):
                  photo = attachment["photo"]
                  out.write("%sPhoto: %s %s\n" % (prefix, photo["src_big"], photo["text"]))
                  if config["export"]["save_photos"]:
-                     try:
-                         reporter.progress("Downloading %s" % photo["src_big"], pad=True)
-                         remote_file = urllib2.urlopen(photo["src_big"])
-                         with open(build_output_path(config["export"]["output_directory"], os.path.basename(photo["src_big"])), "wb") as local_file:
-                             local_file.write(remote_file.read())
-                         reporter.line("OK")
-                     except urllib2.HTTPError, ex:
-                         reporter.line("FAILED")
-                         reporter.error_line(ex.reason)
-                     except urllib2.URLError, ex:
-                         reporter.line("FAILED")
-                         reporter.error_line(ex.reason)
+                     downloader.save(photo["src_big"])
              elif attachment["type"] == "poll":
                  poll = attachment["poll"]
                  out.write("%sPoll: %s" % (prefix, poll["question"]))
