@@ -4,6 +4,7 @@ import codecs
 import json
 import os
 import sys
+import time
 import urllib2
 from urllib import urlencode
 
@@ -65,8 +66,14 @@ max_part = 200  # Due to vk.api
 cnt = messages[0]
 reporter.line("Message count: %s" % cnt)
 
+request_num = 0
+
 while mess != cnt:
     # Try to retrieve info anyway
+
+    if request_num % 5 == 0:
+        time.sleep(1)
+    request_num += 1
 
     while True:
         try:
