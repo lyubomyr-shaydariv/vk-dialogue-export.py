@@ -58,9 +58,23 @@ class MessageWriter:
                 self.__write_video_attachment(prefix, attachment["video"])
             elif attachment["type"] == "wall":
                 self.__write_wall_attachment(prefix, attachment["wall"])
+            elif attachment["type"] == "link":
+                self.__write_link_attachment(prefix, attachment["link"])
+            elif attachment["type"] == "page":
+                self.__write_page_attachment(prefix, attachment["page"])
             else:
                 raise Exception(
                     "unknown attachment type " + attachment["type"])
+
+    def __write_page_attachment(self, prefix, page):
+        self.out.write("%sPage: %s %s\n" %
+                       (prefix, page["view_url"], page["title"]))
+
+    def __write_link_attachment(self, prefix, link):
+        self.out.write("%sLink: %s %s\n" %
+                       (prefix, link["url"], link["description"]))
+        if self.save_photos:
+            self.downloader.save(link["image_src"])
 
     def __write_audio_attachment(self, prefix, audio):
         self.out.write("%sAudio: %s - %s\n" %
